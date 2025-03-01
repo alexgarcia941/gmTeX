@@ -1,0 +1,23 @@
+{
+    "manifest_version": 3,
+    "name": "Gmail LaTeX Render",
+    "version": "0.1",
+    "description": "Render LaTeX math expressions inside Gmail Messages",
+    "permission": ["storage"],
+
+    "content_scripts": [
+        {
+            "matches": ["https://mail.google.com/*"],
+            "js": ["libs/katex.min.js","content.js"],
+            "css": ["styles/katex.min.css", "styles.css"]
+        }
+    ],
+
+    "host_permissions": [
+        "https://mail.google.com/*"
+    ],
+
+    "icons": {
+        "128": "icon.png"
+    }
+}
