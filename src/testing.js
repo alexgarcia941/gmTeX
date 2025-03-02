@@ -1,3 +1,4 @@
+console.log("Gmail LaTeX Render Extension Loaded");
 const config = { 
     subtree: true, 
     childList: true 
@@ -30,6 +31,7 @@ function renderMessageBody() {
 }
 
 function callback(mutations) {
+    console.log("mutator callback has been fired")
     for (const mutation of mutations) {
         for (const node of mutation.addedNodes) {
             if (node.nodeType === Node.ELEMENT_NODE) {
@@ -63,7 +65,31 @@ function addRenderButton(toolBar) {
 }
 
 
-const observer = new MutationObserver(callback)
-observer.observe(document.body,config)
-addRenderButton(document.querySelector(".btc"));
+function addToolbarButton() {
+    // Find the toolbar in the compose window
+    const toolbar = document.querySelector(".btC .G-atb");
+
+    // Avoid adding duplicate buttons
+    if (toolbar && !document.querySelector("#myCustomToolbarButton")) {
+        const button = document.createElement("button");
+        button.id = "myCustomToolbarButton";
+        button.textContent = "My Custom Button";
+        button.style.cssText = "margin-left: 8px; padding: 5px 10px; background: #1a73e8; color: white; border: none; border-radius: 4px; cursor: pointer;";
+        button.onclick = () => alert("Toolbar Button Clicked!");
+
+        // Append the button to the toolbar
+        toolbar.appendChild(button);
+    }
+}
+
+// Attach event listener to detect when compose window opens
+document.addEventListener("click", (event) => {
+    // Gmail's "Compose" button selector
+    if (event.target.closest(".T-I.T-I-KE.L3")) {
+        setTimeout(addToolbarButton, 500); // Delay to allow UI to render
+    }
+});
+
+//const observer = new MutationObserver(callback)
+//observer.observe(document.body,config)
 

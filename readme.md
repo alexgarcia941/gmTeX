@@ -17,6 +17,5 @@ The extension adds a "Render LaTeX" button to the toolbar, enabling users to for
 3. Click the **Render LaTeX** button in the toolbar.
 4. The LaTeX expressions will be replaced with rendered versions using KaTeX.
 
-## Known Issues
-- The extension currently does not support multi-line LaTeX rendering.
-- Some Gmail updates may break the button injection; refresh Gmail if the button does not appear.
+## Dependencies
+This extension is built on top of inboxSDK(which is used by dropbox) and uses katex to render TeX.
