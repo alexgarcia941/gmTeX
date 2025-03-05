@@ -28,6 +28,7 @@ module.exports = {
         new CopyPlugin({
             patterns: [
                 {from: "static"},
+                {from: "node_modules/katex/dist/katex.min.css", to: "css/katex.min.css"}
             ],
         }),
     ],
