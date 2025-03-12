@@ -6,7 +6,7 @@ import { liteAdaptor } from "mathjax-full/js/adaptors/liteAdaptor.js";
 import { RegisterHTMLHandler } from "mathjax-full/js/handlers/html.js";
 
 
-// Initialize MathJax components once
+// Initialize MathJax components 
 const adaptor = liteAdaptor();
 RegisterHTMLHandler(adaptor);
 
@@ -24,19 +24,18 @@ const mathDocument = mathjax.document("", {
     fontCache: 'local'
 }});
 
-//functions
-//TODO: clean this up, there are way too many uneaded steps and transfomations
+//TODO: clean this up, there are too many uneeded mappings from type to type
 async function svgToPng(svgElement){
     const exFactor = 5; // Fall back to 0.5 if not defined
 
     const canvas = document.createElement("canvas");
     // Get the width and height from the SVG attributes (in ex units)
-  const widthEx = parseFloat(svgElement.getAttribute('width'));
-  const heightEx = parseFloat(svgElement.getAttribute('height'));
+    const widthEx = parseFloat(svgElement.getAttribute('width'));
+    const heightEx = parseFloat(svgElement.getAttribute('height'));
 
-  // Convert the width and height from ex to pixels
-  const widthPx = widthEx * exFactor;
-  const heightPx = heightEx * exFactor;
+    // Convert the width and height from ex to pixels
+    const widthPx = widthEx * exFactor;
+    const heightPx = heightEx * exFactor;
     canvas.width = widthPx;
     canvas.height = heightPx;
 
@@ -90,19 +89,81 @@ async function renderLatexToPNG(latex) {
     }
 }
 
+function pngHtml2Blob(pngHtml){
+    const rex = /<img[^>]+src="([^"]+)"/g;
+    const match = rex.exec(pngHtml);
+    if (!match) {
+        console.error("No image source found");
+        return null;
+    }
+
+    const dataUrl = match[1];
+    const base64Data = dataUrl.split(",")[1]
+
+    const binaryString = atob(base64Data);
+    const len = binaryString.length;
+    const uint8Array = new Uint8Array(len);
+    
+    for (let i = 0; i < len; i++) {
+        uint8Array[i] = binaryString.charCodeAt(i);
+    }
+    return new Blob([uint8Array], { type: "image/png" });
+}
 
 async function renderLatexInComposedView(event) {
-    const bodyElement = event.composeView.getBodyElement();
+    let bodyHTML = await event.composeView.getHTMLContent(); 
 
     const latexRegex = /\$\s*([^$]+?)\s*\$/g;
-    const matches = [...bodyElement.innerHTML.matchAll(latexRegex)];
+    const matches = [...bodyHTML.matchAll(latexRegex)];
 
-    for (const match of matches) {
-        const [fullMatch, latex] = match;
-        const svgOutput = await renderLatexToPNG(latex);
-        bodyElement.innerHTML = bodyElement.innerHTML.replace(fullMatch, svgOutput);
+    let imageMap = new Map(); 
+    
+    for (let i = 0; i < matches.length; i++) {
+        const [fullMatch, latex] = matches[i];
+        const pngHtml = await renderLatexToPNG(latex);
+        const blob = pngHtml2Blob(pngHtml);
+        const file = new File([blob], `latexImage${i}.png`, { type: "image/png" });
+
+        
+        imageMap.set(fullMatch, { placeholder: `<!--latex${i}-->`, file });
+
+        bodyHTML = bodyHTML.replace(fullMatch, `<!--latex${i}-->`);
     }
+
+    event.composeView.setBodyHTML(bodyHTML);
+
+    const files = Array.from(imageMap.values()).map(item => item.file);
+    await event.composeView.attachInlineFiles(files);
+
+    //TODO: edit this so that its in sync(no timeout)
+    setTimeout(async () => {
+        let updatedBodyHTML = await event.composeView.getHTMLContent(); // Retrieve updated body content
+
+        let imgTags = updatedBodyHTML.match(/<img[^>]+data-surl="cid:[^"]+"[^>]+>/g);
+
+        if (imgTags) {
+            for (const imgTag of imgTags) {
+                updatedBodyHTML = updatedBodyHTML.replace(imgTag, ""); // Remove the inline image tags
+                updatedBodyHTML = updatedBodyHTML.replace(/(<br\s*\/?>\s*)+/, "");
+            }
+        }
+
+        if (imgTags) {
+            let i = 0;
+            for (const [latexText, data] of imageMap) {
+                if (imgTags[i]) {
+                    updatedBodyHTML = updatedBodyHTML.replace(data.placeholder, imgTags[i]);
+                }
+                i++;
+            }
+
+            event.composeView.setBodyHTML(updatedBodyHTML);
+        } else {
+            console.log("No inline images found.");
+        }
+    }, 1500); 
 }
+
 
 //Objects
 const latexButton = {
@@ -111,7 +172,6 @@ const latexButton = {
     onClick: renderLatexInComposedView,
 }
 
-//add ui components
 InboxSDK.load(2, "Button Loaded")
     .then( (sdk) => {
         sdk.Compose.registerComposeViewHandler((composeView) => {
