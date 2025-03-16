@@ -5,7 +5,6 @@ import { SVG } from "mathjax-full/js/output/svg.js";
 import { liteAdaptor } from "mathjax-full/js/adaptors/liteAdaptor.js";
 import { RegisterHTMLHandler } from "mathjax-full/js/handlers/html.js";
 
-
 // Initialize MathJax components 
 const adaptor = liteAdaptor();
 RegisterHTMLHandler(adaptor);
@@ -213,7 +212,9 @@ const latexRenderButton = {
     onClick: renderLatexInComposedView,
 }
 
-InboxSDK.load(2, "Button Loaded")
+const inboxSdkId= 'sdk_gmtex_bc6d967dcd'
+
+InboxSDK.load(2, inboxSdkId)
     .then( (sdk) => {
         sdk.Compose.registerComposeViewHandler((composeView) => {
             composeView.addButton(latexRenderButton);

@@ -9,7 +9,6 @@
         {
             "matches": ["https://mail.google.com/*"],
             "js": ["content.js"],
-            "css":["css/katex.min.css"],
             "run_at": "document_end"
         }
     ],
@@ -22,7 +21,7 @@
 
     "web_accessible_resources": [
         {
-            "resources": ["*.map", "css/katex.min.css"],
+            "resources":[],
             "matches": ["https://mail.google.com/*"]
         }
     ]

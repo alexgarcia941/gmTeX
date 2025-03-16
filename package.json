@@ -10,11 +10,9 @@
     "build-prod": "webpack --config webpack.prod.js"
   },
   "author": "Alex Garcia",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@inboxsdk/core": "^2.1.51",
-    "html2canvas": "^1.4.1",
-    "katex": "^0.16.21",
     "mathjax": "^3.2.2",
     "mathjax-full": "^3.2.2"
   },
