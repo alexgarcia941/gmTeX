@@ -13,7 +13,7 @@ to format inline LaTeX expressions wrapped in `$...$`.
 ## Usage
 1. Open Gmail and compose a new email.
 2. Enter LaTeX expressions in the message body using:
-   - Inline notation: `$\epsilon^{i\pi} + 1 = 0$`
+   - Inline notation: `$\e^{i\pi} + 1 = 0$`
 3. Click the **Render LaTeX** button in the toolbar.
 4. The LaTeX expressions will be replaced inline attachments.
 
