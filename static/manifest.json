@@ -21,7 +21,7 @@
 
     "web_accessible_resources": [
         {
-            "resources":[],
+            "resources":["*.map"],
             "matches": ["https://mail.google.com/*"]
         }
     ]
