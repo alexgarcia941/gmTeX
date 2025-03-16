@@ -3,6 +3,7 @@ coverage/
 /dist
 node_modules/
 *.log
+*.zip
 
 # OS generated files
 .DS_Store

@@ -5,6 +5,11 @@
     "description": "Render LaTeX math expressions inside Gmail Messages",
     "permissions": ["scripting"],
 
+    "icons": {
+        "16": "icons/skill-icons--latex-dark_16.png",
+        "48": "icons/skill-icons--latex-dark_48.png",
+        "128": "icons/skill-icons--latex-dark_128.png"
+    },
     "content_scripts": [
         {
             "matches": ["https://mail.google.com/*"],
