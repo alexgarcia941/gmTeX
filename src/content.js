@@ -11,7 +11,6 @@ RegisterHTMLHandler(adaptor);
 
 const tex = new TeX();
 const svg = new SVG({
-    useGlobalCache: false,
     scale: 1,              
     minScale: 0.5,
     mtextInheritFont: false, 
@@ -76,7 +75,6 @@ async function svgToPng(svgElement) {
         height: heightPx,
     });
 
-    console.log(pngElement.outerHTML)
     URL.revokeObjectURL(url);
     return pngElement.outerHTML;
 }

@@ -6,7 +6,7 @@ All core processing is performed **locally on your device**, and no personal dat
 
 ## Third-Party Libraries  
 This extension uses the following third-party libraries, which are installed via npm and run on the client:
-- [**InboxSDK**](https://www.inboxsdk.com/) – Used for interacting with Gmail’s interface (used by Dropbox).  
+- [**InboxSDK**](https://www.inboxsdk.com/) – Used for interacting with Gmail’s interface.  
   - Note: InboxSDK makes external requests to load its SDK bundle.  
 - [**MathJax**](https://www.mathjax.org/) – Used for rendering mathematical notation locally.  
 
