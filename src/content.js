@@ -11,12 +11,12 @@ RegisterHTMLHandler(adaptor);
 
 const tex = new TeX();
 const svg = new SVG({
-    useGlobalCache: false
-/*    scale: 1,              
+    useGlobalCache: false,
+    scale: 1,              
     minScale: 0.5,
     mtextInheritFont: false, 
     exFactor: 0.5,         
-    fontCache: 'local'            */ 
+    fontCache: 'local'             
 });
 
 const mathDocument = mathjax.document("", {
@@ -32,22 +32,17 @@ const mathDocument = mathjax.document("", {
  * @param {DOMElement} svgElement - an SVGElement
  * @returns {Promist<string>} - A promise resolving to the png html string.
  */    
-async function svgToPng(svgElement){
-    const exFactor = 10; // Fall back to 0.5 if not defined
+async function svgToPng(svgElement) {
+    // Append the SVG element to the body to get its bounding box
+    document.body.appendChild(svgElement);
+    const bbox = svgElement.getBoundingClientRect();
+    const widthPx = bbox.width;  // Get the width in pixels from the bounding box
+    const heightPx = bbox.height;  // Get the height in pixels from the bounding box
+    document.body.removeChild(svgElement);
 
-    const canvas = document.createElement("canvas");
-    // Get the width and height from the SVG attributes (in ex units)
-    const widthEx = parseFloat(svgElement.getAttribute('width'));
-    const heightEx = parseFloat(svgElement.getAttribute('height'));
-
-    // Convert the width and height from ex to pixels
-    const widthPx = widthEx * exFactor;
-    const heightPx = heightEx * exFactor;
-    canvas.width = widthPx;
-    canvas.height = heightPx;
-
+    // Serialize the SVG data and create a Blob
     const svgData = new XMLSerializer().serializeToString(svgElement);
-    const svgBlob = new Blob([svgData], {type: "image/svg+xml"});
+    const svgBlob = new Blob([svgData], { type: "image/svg+xml" });
     const url = URL.createObjectURL(svgBlob);
 
     const img = new Image();
@@ -57,21 +52,31 @@ async function svgToPng(svgElement){
     let pngDataUrl = await new Promise((resolve, reject) => {
         img.onload = () => {
             const canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
+            const ratio = 2; 
+            canvas.width = widthPx * ratio;
+            canvas.height = heightPx * ratio;
             const context = canvas.getContext("2d");
-            context.drawImage(img, 0, 0);
-            resolve(canvas.toDataURL("image/png"));          };
+
+            context.scale(ratio, ratio);
+            
+            var x = canvas.width / 32,
+            y = canvas.height / 32;
+            
+            context.drawImage(img, x, y, img.width, img.height);
+
+            resolve(canvas.toDataURL("image/png"));
+        };
 
         img.onerror = () => reject(new Error("Failed to load SVG image"));
     });
 
     const pngElement = Object.assign(document.createElement("img"), {
         src: pngDataUrl,
-        width: canvas.width,
-        height: canvas.height,
+        width: widthPx,
+        height: heightPx,
     });
 
+    console.log(pngElement.outerHTML)
     URL.revokeObjectURL(url);
     return pngElement.outerHTML;
 }
@@ -105,7 +110,7 @@ async function renderLatexToPNG(latex) {
  * @returns {Blob} - Blob from the provided image information 
 */    
 function pngHtml2Blob(pngHtml){
-    const rex = /<img[^>]+src="([^"]+)"/g;
+    const rex = /<img[^>]+src="([^"]+)"[^>]+width="([^"]+)"[^>]+height="([^"]+)"/g;
     const match = rex.exec(pngHtml);
     if (!match) {
         console.error("No image source found");
@@ -113,7 +118,9 @@ function pngHtml2Blob(pngHtml){
     }
 
     const dataUrl = match[1];
-    const base64Data = dataUrl.split(",")[1]
+    const width = parseInt(match[2], 10);
+    const height = parseInt(match[3], 10);
+    const base64Data = dataUrl.split(",")[1];
 
     const binaryString = atob(base64Data);
     const len = binaryString.length;
@@ -122,7 +129,8 @@ function pngHtml2Blob(pngHtml){
     for (let i = 0; i < len; i++) {
         uint8Array[i] = binaryString.charCodeAt(i);
     }
-    return new Blob([uint8Array], { type: "image/png" });
+    let blob = new Blob([uint8Array], { type: "image/png" });
+    return {blob, width, height }
 }
 
 /**
@@ -138,13 +146,13 @@ async function renderLatexInComposedView(event) {
     const latexRegex = /\$\s*([^$]+?)\s*\$/g;
     const matches = [...bodyHTML.matchAll(latexRegex)];
 
-    //map with latex key and object with placeholder string and image file
     let imageMap = new Map(); 
     
     for (let i = 0; i < matches.length; i++) {
         const [fullMatch, latex] = matches[i];
         const pngHtml = await renderLatexToPNG(latex);
-        const blob = pngHtml2Blob(pngHtml);
+        const blobInfo = pngHtml2Blob(pngHtml);
+        const blob = blobInfo.blob;
         const file = new File([blob], `latexImage${i}_delete_me.png`, { type: "image/png" });
 
         if (imageMap.has(fullMatch)) {
@@ -152,7 +160,12 @@ async function renderLatexInComposedView(event) {
             bodyHTML = bodyHTML.replace(fullMatch, imageMap.get(fullMatch).placeholder);
         } else {
             //new equation, new image
-            imageMap.set(fullMatch, { placeholder: `<!--latex${i}-->`, file });
+            imageMap.set(fullMatch, { 
+                placeholder: `<!--latex${i}-->`, 
+                file , 
+                width: blobInfo.width , 
+                height: blobInfo.height
+            });
             bodyHTML = bodyHTML.replace(fullMatch, `<!--latex${i}-->`);
         }
     }
@@ -162,48 +175,66 @@ async function renderLatexInComposedView(event) {
     const files = Array.from(imageMap.values()).map(item => item.file);
     await event.composeView.attachInlineFiles(files);
 
-
-    //observer to see if all images are uploaded
     let numberOfInlineFiles = files.length
-    let uploadCount = 0;
-    const observer = new MutationObserver(async (mutations, obs) => {
-        for (const mutation of mutations) {
-            uploadCount += [...mutation.addedNodes].filter(node =>
-                node.nodeType === 1 && node.tagName === "IMG" && node.alt.includes('_delete_me')
-            ).length;
+
+    // Create a MutationObserver to monitor image uploads
+    const observer = new MutationObserver(( mutations, obs) => {
+        const targetObj = mutations[0].target; 
+        const uploadImgCount = targetObj.querySelectorAll('img[alt*="_delete_me"]').length;
+
+        if (uploadImgCount >= numberOfInlineFiles) {
+            obs.disconnect();
+            processUploadedImages(targetObj, imageMap);
         }
+    }); 
 
-        if (uploadCount < numberOfInlineFiles) return;
-        
-        obs.disconnect();
-   
-        let updatedBodyHTML = await event.composeView.getHTMLContent();
+    const target = event.composeView.getBodyElement();
+    const config = {childList: true, subtree: true};
+    observer.observe(target, config);
+}
 
-        //find all uploaded inline images(tagged with delete_me in alt)
+//only called once images are uploaded 
+function processUploadedImages(target, imageMap) {
+    let updatedBodyHTML = target.getHTML();
         let generatedImgTags = updatedBodyHTML.match(/(<img\b[^>]*\balt=["'])([^"']*)_delete_me([^"']*)(["'][^>]*>)/g);
 
-        //delete uploaded inline images and added break tags
         if (generatedImgTags) {
             updatedBodyHTML = updatedBodyHTML.replace(/<img\b[^>]*\balt=["'][^"']*_delete_me[^"']*["'][^>]*>\s*<br\s*\/?>/g, '');
         }
 
-        //replace placeholders with images
+        // Replace placeholders with images
         if (generatedImgTags) {
             let i = 0;
             for (const [latexText, data] of imageMap) {
                 if (generatedImgTags[i]) {
-                    const cleanedImgTag = generatedImgTags[i].replace(/_delete_me/g, '');
+                    let cleanedImgTag = generatedImgTags[i].replace(/_delete_me/g, '');
+                    cleanedImgTag = cleanedImgTag.replace(/(<img\b[^>]*>)/, function(match) {
+                        const widthAttr = ` width="${data.width}"`;
+                        const heightAttr = ` height="${data.height}"`;
+
+                        // If the image already has width/height, replace those; otherwise, add them
+                        if (/width=["'][^"']*["']/.test(match)) {
+                            match = match.replace(/width=["'][^"']*["']/, widthAttr);
+                        } else {
+                            match = match.replace(/<img\b/, `<img${widthAttr}`);
+                        }
+
+                        if (/height=["'][^"']*["']/.test(match)) {
+                            match = match.replace(/height=["'][^"']*["']/, heightAttr);
+                        } else {
+                            match = match.replace(/<img\b/, `<img${heightAttr}`);
+                        }
+
+                        return match;
+                    });
+
                     updatedBodyHTML = updatedBodyHTML.replaceAll(data.placeholder, cleanedImgTag);
                 }
                 i++;
             }
-            event.composeView.setBodyHTML(updatedBodyHTML);
+            target.innerHTML = updatedBodyHTML;
         }
-    });
-
-    observer.observe(event.composeView.getBodyElement(), {childList: true, subtree: true});
 }
-
 
 //Objects
 const latexRenderButton = {
