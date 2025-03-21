@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "Gmail LaTeX Render",
+    "name": "LaTeX for Gmail",
     "version": "0.1",
     "description": "Render LaTeX math expressions inside Gmail Messages",
     "permissions": ["scripting"],
