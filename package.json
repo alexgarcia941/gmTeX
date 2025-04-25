@@ -12,14 +12,18 @@
   "author": "Alex Garcia",
   "license": "MIT",
   "dependencies": {
+    "@babel/core": "^7.26.10",
+    "@babel/preset-env": "^7.26.9",
     "@inboxsdk/core": "^2.1.51",
-    "mathjax": "^3.2.2",
-    "mathjax-full": "^3.2.2"
+    "babel-loader": "^10.0.0",
+    "mathjax-full": "^3.2.2",
+    "terser-webpack-plugin": "^5.3.14"
   },
   "devDependencies": {
     "copy-webpack-plugin": "^12.0.2",
     "source-map-loader": "^5.0.0",
-    "webpack": "^5.91.0",
+    "webpack": "^5.98.0",
+    "webpack-bundle-analyzer": "^4.10.2",
     "webpack-cli": "^5.1.4",
     "webpack-merge": "^5.10.0"
   }

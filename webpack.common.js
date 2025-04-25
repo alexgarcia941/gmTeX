@@ -9,6 +9,10 @@ module.exports = {
     pageWorld: '@inboxsdk/core/pageWorld.js',
     background: '@inboxsdk/core/background.js',
   },
+ optimization: {
+    usedExports: true,  // Removes unused code
+    minimize: true,     // Minifies the final bundle
+  },
   devtool: 'source-map',
   module: {
     rules: [
@@ -30,4 +34,13 @@ module.exports = {
       ],
     }),
   ],
+resolve: {
+    alias: {
+      'mathjax': require.resolve('mathjax-full/js/mathjax.js'),
+      'mathjax/input/tex': require.resolve('mathjax-full/js/input/tex.js'),
+      'mathjax/output/svg': require.resolve('mathjax-full/js/output/svg.js'),
+      'mathjax/adaptors/liteAdaptor': require.resolve('mathjax-full/js/adaptors/liteAdaptor.js'),
+      'mathjax/handlers/html': require.resolve('mathjax-full/js/handlers/html.js')
+    }
+  },
 };
