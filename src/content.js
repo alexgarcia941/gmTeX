@@ -238,7 +238,39 @@ function processUploadedImages(target, imageMap) {
             }
             target.innerHTML = updatedBodyHTML;
         }
+    //BANDADE FIX, not meant to be permanent
+    const tempImages = target.querySelectorAll('img[alt*="_delete_me"]');
+    console.log("what");
+    tempImages.forEach(img => {
+        // Remove preceding breaks and zero-width spaces
+        let prev = img.previousSibling;
+        while (prev && (
+            (prev.nodeType === Node.ELEMENT_NODE && prev.tagName === 'BR') ||
+            (prev.nodeType === Node.TEXT_NODE && !prev.textContent.replace(/\u200B/g, '').trim())
+        )) {
+            const toRemove = prev;
+            prev = prev.previousSibling;
+            toRemove.remove();
+        }
+
+        // Cache next sibling before removing image
+        let next = img.nextSibling;
+
+        // Remove the temp image itself
+        img.remove();
+
+        // Remove trailing breaks and zero-width spaces
+        while (next && (
+            (next.nodeType === Node.ELEMENT_NODE && next.tagName === 'BR') ||
+            (next.nodeType === Node.TEXT_NODE && !next.textContent.replace(/\u200B/g, '').trim())
+        )) {
+            const toRemove = next;
+            next = next.nextSibling;
+            toRemove.remove();
+        }
+    });
 }
+
 
 //method to add identifying attributes to generated images
 function addAttributes(target){
